@@ -1,0 +1,106 @@
+/* 全域設定 */
+body {
+  font-family: "Microsoft JhengHei", sans-serif;
+  background-color: #f5f7fa;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* 深色模式 */
+.dark-mode {
+  background-color: #1d1d1d !important;
+  color: #f1f1f1 !important;
+}
+
+.dark-mode .card {
+  background-color: #2a2a2a !important;
+  color: #fff !important;
+}
+
+.dark-mode input, .dark-mode select {
+  background-color: #3a3a3a !important;
+  color: #fff !important;
+  border-color: #666 !important;
+}
+
+/* 卡片格式 */
+.card {
+  border-radius: 16px;
+  padding: 20px;
+}
+
+/* 表格美化 */
+.table-container {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table th {
+  background: #0d6efd;
+  color: white;
+  text-align: center;
+  position: sticky;
+  top: 0;
+}
+
+table th, table td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* 按鈕美化 */
+.btn-add {
+  background-color: #0d6efd;
+  color: white;
+  border-radius: 8px;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 深色模式下的表格 */
+.dark-mode table {
+  color: white !important;
+}
+
+.dark-mode table th {
+  background-color: #444 !important;
+}
+
+.dark-mode table td {
+  background-color: #2a2a2a !important;
+  border-color: #444;
+}
+
+/* 頁面標題 */
+.page-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* RWD 手機適配 */
+@media (max-width: 480px) {
+  .card {
+    padding: 15px;
+  }
+  
+  .page-title {
+    font-size: 22px;
+  }
+
+  table th, table td {
+    padding: 8px;
+    font-size: 14px;
+  }
+}

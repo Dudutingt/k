@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Electric Tracker - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Smart Electric Tracker</a>
+      <div class="d-flex">
+        <button id="toggleDark" class="btn btn-secondary me-2">🌙</button>
+        <button id="logoutBtn" class="btn btn-danger">登出</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <h2 class="page-title">歡迎, <span id="userName"></span></h2>
+
+    <!-- 統計卡片 -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <h5>本月總電費</h5>
+          <p id="totalCost" class="fs-4 fw-bold">0 元</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <h5>本月用電量</h5>
+          <p id="totalUsage" class="fs-4 fw-bold">0 度</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <h5>平均單價</h5>
+          <p id="avgPrice" class="fs-4 fw-bold">0 元/度</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增紀錄表單 -->
+    <div class="card mb-4 p-3 shadow-sm">
+      <h5>新增電費紀錄</h5>
+      <form id="recordForm" class="row g-3">
+        <div class="col-md-4">
+          <input type="month" id="recordMonth" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" id="recordUsage" class="form-control" placeholder="度數" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" id="recordPrice" class="form-control" placeholder="單價" required>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">新增</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 紀錄表格 -->
+    <div class="card shadow-sm p-3 mb-4">
+      <h5>歷史紀錄</h5>
+      <div class="table-container">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>月份</th>
+              <th>用電量 (度)</th>
+              <th>單價 (元/度)</th>
+              <th>總金額 (元)</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="recordTableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 折線圖 -->
+    <div class="card shadow-sm p-3 mb-4">
+      <h5>用電趨勢</h5>
+      <canvas id="usageChart" height="150"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // ---------- 檢查登入 ----------
+    const currentUser = localStorage.getItem("currentUser");
+    if (!currentUser) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("userName").textContent = currentUser;
+    }
+
+    // ---------- 登出 ----------
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("currentUser");
+      window.location.href = "index.html";
+    });
+
+    // ---------- 深色模式切換 ----------
+    const toggleDark = document.getElementById("toggleDark");
+    toggleDark.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+    });
+
+    // ---------- 載入資料 ----------
+    let users = JSON.parse(localStorage.getItem("users")) || {};
+    let records = users[currentUser].records || [];
+
+    const recordTableBody = document.getElementById("recordTableBody");
+
+    function renderTable() {
+      recordTableBody.innerHTML = "";
+      let totalCost = 0, totalUsage = 0;
+      records.forEach((rec, idx) => {
+        const cost = rec.usage * rec.price;
+        totalCost += cost;
+        totalUsage += parseFloat(rec.usage);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${rec.month}</td>
+          <td>${rec.usage}</td>
+          <td>${rec.price}</td>
+          <td>${cost.toFixed(2)}</td>
+          <td><span class="btn-delete" data-idx="${idx}">刪除</span></td>
+        `;
+        recordTableBody.appendChild(tr);
+      });
+      document.getElementById("totalCost").textContent = totalCost.toFixed(2) + " 元";
+      document.getElementById("totalUsage").textContent = totalUsage + " 度";
+      document.getElementById("avgPrice").textContent = (totalUsage ? (totalCost/totalUsage).toFixed(2) : 0) + " 元/度";
+
+      // 更新圖表
+      updateChart();
+    }
+
+    // ---------- 新增紀錄 ----------
+    document.getElementById("recordForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const month = document.getElementById("recordMonth").value;
+      const usage = parseFloat(document.getElementById("recordUsage").value);
+      const price = parseFloat(document.getElementById("recordPrice").value);
+      records.push({month, usage, price});
+      users[currentUser].records = records;
+      localStorage.setItem("users", JSON.stringify(users));
+      renderTable();
+      e.target.reset();
+    });
+
+    // ---------- 刪除紀錄 ----------
+    recordTableBody.addEventListener("click", (e) => {
+      if (e.target.classList.contains("btn-delete")) {
+        const idx = e.target.dataset.idx;
+        records.splice(idx, 1);
+        users[currentUser].records = records;
+        localStorage.setItem("users", JSON.stringify(users));
+        renderTable();
+      }
+    });
+
+    // ---------- Chart ----------
+    const ctx = document.getElementById("usageChart").getContext("2d");
+    let usageChart = new Chart(ctx, {
+      type: "line",
+      data: { labels: [], datasets: [{ label: "用電量 (度)", data: [], backgroundColor: "rgba(13,110,253,0.2)", borderColor: "#0d6efd", borderWidth: 2, fill: true }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    function updateChart() {
+      usageChart.data.labels = records.map(r => r.month);
+      usageChart.data.datasets[0].data = records.map(r => r.usage);
+      usageChart.update();
+    }
+
+    // ---------- 初始渲染 ----------
+    renderTable();
+  </script>
+</body>
+</html>
